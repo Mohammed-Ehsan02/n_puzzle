@@ -43,9 +43,9 @@ help:
 	@printf "$(BOLD)╠══════════════════════════════════════════════════════════╣$(RESET)\n"
 	@printf "$(BOLD)║                                                        ║$(RESET)\n"
 	@printf "$(BOLD)║$(RESET)  $(GREEN)make all$(RESET)          Compile-check all source files      $(BOLD)║$(RESET)\n"
-	@printf "$(BOLD)║$(RESET)  $(GREEN)make run$(RESET)          Run the solver interactively        $(BOLD)║$(RESET)\n"
+	@printf "$(BOLD)║$(RESET)  $(GREEN)make solve S=<n>$(RESET)   Solve a random NxN puzzle          $(BOLD)║$(RESET)\n"
 	@printf "$(BOLD)║$(RESET)  $(GREEN)make file F=<path>$(RESET) Solve a puzzle from a file         $(BOLD)║$(RESET)\n"
-	@printf "$(BOLD)║$(RESET)  $(GREEN)make gen S=<size>$(RESET)  Generate a random solvable puzzle  $(BOLD)║$(RESET)\n"
+	@printf "$(BOLD)║$(RESET)  $(GREEN)make gen S=<size>$(RESET)  Generate a random puzzle (print)   $(BOLD)║$(RESET)\n"
 	@printf "$(BOLD)║$(RESET)  $(GREEN)make test$(RESET)         Run all tests (pytest)              $(BOLD)║$(RESET)\n"
 	@printf "$(BOLD)║$(RESET)  $(GREEN)make test T=<name>$(RESET) Run a specific test file           $(BOLD)║$(RESET)\n"
 	@printf "$(BOLD)║$(RESET)  $(GREEN)make check$(RESET)        Syntax-check all .py files          $(BOLD)║$(RESET)\n"
@@ -55,8 +55,9 @@ help:
 	@printf "$(BOLD)║                                                        ║$(RESET)\n"
 	@printf "$(BOLD)╠══════════════════════════════════════════════════════════╣$(RESET)\n"
 	@printf "$(BOLD)║$(RESET)  $(DIM)Examples:$(RESET)                                              $(BOLD)║$(RESET)\n"
+	@printf "$(BOLD)║$(RESET)    $(CYAN)make solve S=3$(RESET)                                      $(BOLD)║$(RESET)\n"
+	@printf "$(BOLD)║$(RESET)    $(CYAN)make solve S=3 H=linear_conflict$(RESET)                   $(BOLD)║$(RESET)\n"
 	@printf "$(BOLD)║$(RESET)    $(CYAN)make file F=puzzles/example_4x4.txt$(RESET)                 $(BOLD)║$(RESET)\n"
-	@printf "$(BOLD)║$(RESET)    $(CYAN)make gen S=3$(RESET)                                        $(BOLD)║$(RESET)\n"
 	@printf "$(BOLD)║$(RESET)    $(CYAN)make test T=goal$(RESET)                                    $(BOLD)║$(RESET)\n"
 	@printf "$(BOLD)║                                                        ║$(RESET)\n"
 	@printf "$(BOLD)╚══════════════════════════════════════════════════════════╝$(RESET)\n"
@@ -66,18 +67,28 @@ help:
 #  Core targets                                                                #
 # --------------------------------------------------------------------------- #
 
-run:
-	@printf "$(CYAN)Running $(NAME)...$(RESET)\n"
-	@$(PYTHON) $(SRC_DIR)/main.py
+# Default heuristic
+H ?= manhattan
+
+solve:
+ifndef S
+	@printf "$(RED)Error: specify a size with S=<number>$(RESET)\n"
+	@printf "$(DIM)  Example: make solve S=3$(RESET)\n"
+	@printf "$(DIM)  Options: H=manhattan|misplaced|linear_conflict$(RESET)\n"
+	@exit 1
+endif
+	@printf "$(CYAN)Solving random $(S)x$(S) puzzle with $(H)...$(RESET)\n"
+	@$(PYTHON) $(SRC_DIR)/main.py -s $(S) -H $(H)
 
 file:
 ifndef F
 	@printf "$(RED)Error: specify a file with F=<path>$(RESET)\n"
 	@printf "$(DIM)  Example: make file F=puzzles/example_4x4.txt$(RESET)\n"
+	@printf "$(DIM)  Options: H=manhattan|misplaced|linear_conflict$(RESET)\n"
 	@exit 1
 endif
-	@printf "$(CYAN)Solving puzzle from: $(F)$(RESET)\n"
-	@$(PYTHON) $(SRC_DIR)/main.py -f $(F)
+	@printf "$(CYAN)Solving puzzle from: $(F) with $(H)...$(RESET)\n"
+	@$(PYTHON) $(SRC_DIR)/main.py -f $(F) -H $(H)
 
 gen:
 ifndef S
@@ -119,4 +130,4 @@ clean:
 
 re: clean all
 
-.PHONY: all help run file gen test check clean re
+.PHONY: all help solve file gen test check clean re

@@ -58,13 +58,21 @@ n_puzzle/
 │   ├── state.py                 # PuzzleState class (tuple-based, immutable)
 │   ├── goal.py                  # Snail goal generation
 │   ├── solvability.py           # Solvability checker (permutation parity)
-│   ├── visualizer.py            # Display puzzle states (TODO)
+│   ├── visualizer.py            # Display puzzle states (future)
 │   └── solver/                  # Search algorithms
 │       ├── __init__.py          # Package init
-│       ├── a_star.py            # A* search implementation (TODO)
-│       ├── heuristics.py        # Manhattan, Misplaced, Linear Conflict (TODO)
-│       ├── strategy.py          # Bonus: Greedy, Uniform-cost (TODO)
-│       └── utils.py             # Path reconstruction (TODO)
+│       ├── a_star.py            # A* search implementation
+│       ├── heuristics.py        # Manhattan, Misplaced, Linear Conflict
+│       ├── strategy.py          # Bonus: Greedy, Uniform-cost (future)
+│       └── utils.py             # Path reconstruction + board display
+├── tests/                       # Test suite (pytest)
+│   ├── test_goal.py             # 15 tests — snail goal generation
+│   ├── test_solvability.py      # 21 tests — solvability detection
+│   ├── test_parser.py           # 27 tests — file parsing + random gen
+│   ├── test_state.py            # 43 tests — PuzzleState class
+│   ├── test_heuristics.py       # 19 tests — all 3 heuristics
+│   └── test_solver.py           # 17 tests — A*, path reconstruction
+├── conftest.py                  # pytest config — adds src/ to sys.path
 ├── puzzles/                     # Test puzzle files
 │   └── example_4x4.txt
 └── tools/                       # 42-provided utilities (not our code)
@@ -251,36 +259,70 @@ for ANY goal state.
 ---
 
 ### `src/main.py` — Entry Point
-**Status**: SKELETON (imports wired, `main()` is empty TODO)
+**Status**: COMPLETE, TESTED
 
-Will eventually handle:
-- CLI argument parsing (file path, heuristic choice, puzzle size)
-- Reading puzzle from file or generating random
-- Generating snail goal
-- Checking solvability
-- Running A\* solver
-- Displaying results
+**Libraries**: `argparse`, `sys`, `time` (all stdlib)
+
+**Purpose**: Orchestrates the full solve pipeline — parse CLI args, get puzzle, generate goal, check solvability, run A*, display results.
+
+**CLI Arguments** (via `argparse`):
+- `-f / --file <path>`: Read puzzle from a file
+- `-s / --size <n>`: Generate a random solvable N×N puzzle
+- `-H / --heuristic <name>`: Choose heuristic (`manhattan`, `misplaced`, `linear_conflict`; default: `manhattan`)
+- `-f` and `-s` are mutually exclusive (one is required)
+
+**Functions**:
+- `parse_args()`: Builds the argparse CLI, returns namespace with `file`, `size`, `heuristic`.
+- `display_solution(puzzle, goal, path, stats, heuristic_name, elapsed)`: Formats and prints the full solution — initial state, goal state, step-by-step sequence, and statistics (moves, time complexity, size complexity, solve time).
+- `main()`: Full pipeline — get puzzle → generate goal → solvability check → A* → display.
 
 ---
 
 ### `src/solver/a_star.py` — A\* Search
-**Status**: DOCUMENTED STUB (not yet implemented)
+**Status**: COMPLETE, TESTED
 
-Will implement the core A\* loop with open/closed sets, using `heapq` for the priority queue.
+**Libraries**: `heapq` (stdlib)
+
+**Purpose**: Core A* search algorithm that finds the optimal solution path.
+
+**Function**: `a_star(initial_state, goal_board, heuristic_func)` → `(path, stats)`
+
+**Implementation Details**:
+- **Open set**: `heapq` min-heap ordered by `f` value, with a parallel `open_dict` (board → PuzzleState) for O(1) lookup. `heapq` doesn't support "is element in heap?" or "update priority", so we use the **stale entry pattern** — push new entries and skip outdated ones on pop.
+- **Closed set**: `closed_dict` (board → PuzzleState) for states already expanded.
+- **Reopening**: If a cheaper path to a closed state is found, it moves back to open (per subject pseudocode). Rare with consistent heuristics but implemented for correctness.
+- **Statistics**: Tracks `time_complexity` (states popped from open), `size_complexity` (max `len(open) + len(closed)`), `moves` (solution path length - 1).
+- Returns `(None, stats)` if no solution exists (defensive — shouldn't happen for solvable puzzles).
 
 ---
 
 ### `src/solver/heuristics.py` — Heuristic Functions
-**Status**: DOCUMENTED STUBS (not yet implemented)
+**Status**: COMPLETE, TESTED
 
-Three functions to implement: `manhattan()`, `misplaced()`, `linear_conflict()`.
+**Libraries**: None (pure Python)
+
+**Purpose**: Three admissible heuristic functions for A* search. All accept `(board, goal)` and return an integer estimate.
+
+**Functions**:
+- `_build_goal_map(goal)` → `dict[int, (row, col)]`: Shared helper — maps each tile value to its goal position. Used by all three heuristics.
+- `manhattan(board, goal)` → `int`: Sum of taxicab distances for all non-blank tiles. **Mandatory** per subject.
+- `misplaced(board, goal)` → `int`: Count of tiles not in their goal position (Hamming distance). Weakest heuristic — A* explores the most states.
+- `linear_conflict(board, goal)` → `int`: Manhattan + 2 per conflict pair. Two tiles conflict if they're both in their goal row (or column) but in the wrong order relative to each other. Strongest heuristic — A* explores the fewest states.
+- `_count_row_conflicts(board, goal_map, row, n)` → `int`: Counts 2 × row conflicts.
+- `_count_col_conflicts(board, goal_map, col, n)` → `int`: Counts 2 × column conflicts.
+
+**Ordering** (weakest → strongest): `misplaced ≤ manhattan ≤ linear_conflict`
 
 ---
 
 ### `src/solver/utils.py` — Search Utilities
-**Status**: DOCUMENTED STUB (not yet implemented)
+**Status**: COMPLETE, TESTED
 
-`reconstruct_path()`: Follow parent pointers from goal to start, reverse to get solution.
+**Libraries**: None (pure Python)
+
+**Functions**:
+- `reconstruct_path(state)` → `list[PuzzleState]`: Follows parent pointers from goal back to start, reverses to get `[start, ..., goal]` order. Number of moves = `len(path) - 1`.
+- `print_board(board, n)` → `str`: Formats a board as an aligned multi-line string. Column width adapts to the largest number (`N²-1`) so 2-digit numbers align properly.
 
 ---
 
@@ -317,13 +359,19 @@ Run `make help` to see all available commands:
 | Command | Description |
 |---------|-------------|
 | `make all` | Syntax-check all source files |
-| `make run` | Run the solver |
+| `make solve S=<n>` | Solve a random N×N puzzle |
+| `make solve S=<n> H=<heuristic>` | Solve with a specific heuristic |
 | `make file F=<path>` | Solve a puzzle from a file |
-| `make gen S=<size>` | Generate a random solvable puzzle |
+| `make file F=<path> H=<heuristic>` | Solve from file with specific heuristic |
+| `make gen S=<size>` | Generate a random solvable puzzle (print only) |
+| `make test` | Run all tests (142 tests via pytest) |
+| `make test T=<name>` | Run a specific test file (e.g., `T=goal`) |
 | `make check` | Syntax-check all .py files |
 | `make clean` | Remove `__pycache__` and `.pyc` files |
 | `make re` | Clean + recompile |
 | `make help` | Show help with all commands and examples |
+
+**Heuristic options** for `H=`: `manhattan` (default), `misplaced`, `linear_conflict`
 
 ---
 
@@ -336,10 +384,25 @@ Run `make help` to see all available commands:
 | 3 | Fix `solvability.py` (snail goal) | DONE |
 | 4 | Harden `parser.py` (validations) | DONE |
 | 5 | Document all files | DONE |
-| 6 | Implement heuristics | NEXT |
-| 7 | Implement A\* search | TODO |
-| 8 | Implement path reconstruction | TODO |
-| 9 | Wire up `main.py` | TODO |
-| 10 | Implement visualizer | TODO |
-| 11 | Test with various sizes | TODO |
-| 12 | Bonus: greedy + uniform-cost | TODO |
+| 6 | Implement heuristics (3 functions) | DONE |
+| 7 | Implement path reconstruction + board display | DONE |
+| 8 | Implement A\* search | DONE |
+| 9 | Wire up `main.py` (CLI, full pipeline) | DONE |
+| 10 | Test suite (142 tests, all passing) | DONE |
+| 11 | Bonus: greedy + uniform-cost search | FUTURE |
+| 12 | Visualizer | FUTURE |
+| 13 | Performance optimization for 4×4+ deep puzzles | FUTURE |
+
+### All Mandatory Requirements — COMPLETE
+
+The solver fully satisfies all mandatory requirements from the subject:
+- A* search algorithm with optimal solution finding
+- Works for any puzzle size (tested with 3×3, 4×4)
+- Two input modes: file (`-f`) and random generation (`-s`)
+- Three admissible heuristics: Manhattan (mandatory), Misplaced, Linear Conflict
+- Solvability detection with clear error message
+- Output includes: solution sequence, move count, time complexity, size complexity
+- Makefile with standard rules
+
+### Known Limitations
+- **4×4+ deep puzzles**: Puzzles with many moves from goal (e.g., `puzzles/example_4x4.txt`) may take a long time. Easy 4×4 puzzles (1-2 moves) solve instantly. This is inherent to A* on larger search spaces — the bonus greedy search would trade optimality for speed.
