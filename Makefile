@@ -46,6 +46,8 @@ help:
 	@printf "$(BOLD)║$(RESET)  $(GREEN)make run$(RESET)          Run the solver interactively        $(BOLD)║$(RESET)\n"
 	@printf "$(BOLD)║$(RESET)  $(GREEN)make file F=<path>$(RESET) Solve a puzzle from a file         $(BOLD)║$(RESET)\n"
 	@printf "$(BOLD)║$(RESET)  $(GREEN)make gen S=<size>$(RESET)  Generate a random solvable puzzle  $(BOLD)║$(RESET)\n"
+	@printf "$(BOLD)║$(RESET)  $(GREEN)make test$(RESET)         Run all tests (pytest)              $(BOLD)║$(RESET)\n"
+	@printf "$(BOLD)║$(RESET)  $(GREEN)make test T=<name>$(RESET) Run a specific test file           $(BOLD)║$(RESET)\n"
 	@printf "$(BOLD)║$(RESET)  $(GREEN)make check$(RESET)        Syntax-check all .py files          $(BOLD)║$(RESET)\n"
 	@printf "$(BOLD)║$(RESET)  $(GREEN)make clean$(RESET)        Remove __pycache__ and .pyc files   $(BOLD)║$(RESET)\n"
 	@printf "$(BOLD)║$(RESET)  $(GREEN)make re$(RESET)           Clean + recompile                   $(BOLD)║$(RESET)\n"
@@ -55,7 +57,7 @@ help:
 	@printf "$(BOLD)║$(RESET)  $(DIM)Examples:$(RESET)                                              $(BOLD)║$(RESET)\n"
 	@printf "$(BOLD)║$(RESET)    $(CYAN)make file F=puzzles/example_4x4.txt$(RESET)                 $(BOLD)║$(RESET)\n"
 	@printf "$(BOLD)║$(RESET)    $(CYAN)make gen S=3$(RESET)                                        $(BOLD)║$(RESET)\n"
-	@printf "$(BOLD)║$(RESET)    $(CYAN)make gen S=4$(RESET)                                        $(BOLD)║$(RESET)\n"
+	@printf "$(BOLD)║$(RESET)    $(CYAN)make test T=goal$(RESET)                                    $(BOLD)║$(RESET)\n"
 	@printf "$(BOLD)║                                                        ║$(RESET)\n"
 	@printf "$(BOLD)╚══════════════════════════════════════════════════════════╝$(RESET)\n"
 	@printf "\n"
@@ -87,6 +89,19 @@ endif
 	@$(PYTHON) tools/npuzzle-gen.py $(S) -s
 
 # --------------------------------------------------------------------------- #
+#  Testing                                                                     #
+# --------------------------------------------------------------------------- #
+
+test:
+ifdef T
+	@printf "$(CYAN)Running tests matching: $(T)$(RESET)\n"
+	@$(PYTHON) -m pytest tests/test_$(T).py -v
+else
+	@printf "$(CYAN)Running all tests...$(RESET)\n"
+	@$(PYTHON) -m pytest tests/ -v
+endif
+
+# --------------------------------------------------------------------------- #
 #  Build & clean                                                               #
 # --------------------------------------------------------------------------- #
 
@@ -104,4 +119,4 @@ clean:
 
 re: clean all
 
-.PHONY: all help run file gen check clean re
+.PHONY: all help run file gen test check clean re
