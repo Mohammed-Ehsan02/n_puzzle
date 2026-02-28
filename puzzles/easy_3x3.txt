@@ -1,0 +1,5 @@
+# Easy 3x3 puzzle — solves in ~5 moves
+3
+1 0 2
+8 6 3
+7 5 4

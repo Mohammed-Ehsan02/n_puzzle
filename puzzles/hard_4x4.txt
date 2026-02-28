@@ -1,0 +1,6 @@
+# Hard 4x4 puzzle — solves in ~36 moves
+4
+13  0  1  9
+11  3 12 14
+ 2 15  5  4
+10  8  7  6

@@ -1,6 +1,7 @@
-# Example 4x4 puzzle input
+# Example 4x4 puzzle — unsolvable (for snail goal)
+# Use this to test unsolvable detection
 4
-5  1  2  3
-6  0  4  8
-9 10  7 12
+ 5  1  2  3
+ 6  0  4  8
+ 9 10  7 12
 13 14 11 15

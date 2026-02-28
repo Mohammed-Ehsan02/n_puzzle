@@ -1,0 +1,5 @@
+# Medium 3x3 puzzle — solves in ~15 moves
+3
+3 2 6
+1 4 0
+8 7 5
