@@ -50,7 +50,8 @@ help:
 	@printf "$(BOLD)║$(RESET)  $(GREEN)make test T=<name>$(RESET) Run a specific test file           $(BOLD)║$(RESET)\n"
 	@printf "$(BOLD)║$(RESET)  $(GREEN)make check$(RESET)        Syntax-check all .py files          $(BOLD)║$(RESET)\n"
 	@printf "$(BOLD)║$(RESET)  $(GREEN)make clean$(RESET)        Remove __pycache__ and .pyc files   $(BOLD)║$(RESET)\n"
-	@printf "$(BOLD)║$(RESET)  $(GREEN)make re$(RESET)           Clean + recompile                   $(BOLD)║$(RESET)\n"
+	@printf "$(BOLD)║$(RESET)  $(GREEN)make fclean$(RESET)       Full clean (caches + test caches)   $(BOLD)║$(RESET)\n"
+	@printf "$(BOLD)║$(RESET)  $(GREEN)make re$(RESET)           fclean + recompile                  $(BOLD)║$(RESET)\n"
 	@printf "$(BOLD)║$(RESET)  $(GREEN)make help$(RESET)         Show this help message              $(BOLD)║$(RESET)\n"
 	@printf "$(BOLD)║                                                        ║$(RESET)\n"
 	@printf "$(BOLD)╠══════════════════════════════════════════════════════════╣$(RESET)\n"
@@ -128,6 +129,10 @@ clean:
 	@find . -type f -name "*.pyc" -delete 2>/dev/null || true
 	@printf "$(YELLOW)Cleaned cache files.$(RESET)\n"
 
-re: clean all
+fclean: clean
+	@rm -rf .pytest_cache .mypy_cache 2>/dev/null || true
+	@printf "$(YELLOW)Full clean done.$(RESET)\n"
 
-.PHONY: all help solve file gen test check clean re
+re: fclean all
+
+.PHONY: all help solve file gen test check clean fclean re
